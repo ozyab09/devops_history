@@ -1,3 +1,20 @@
+# Шпаргалка по командам DevOps (курс OTUS DevOps-2018-09)
+
+> Источник: консольная история из курса. Сгруппировано по темам.
+> Команды очищены: склейки разбиты, опечатки исправлены, секреты заменены на `<placeholders>`.
+
+## Статистика
+
+- Всего команд: **423** (после дедупликации)
+- Тем: 16
+
+---
+
+## ANSIBLE — 44 команд
+
+Управление конфигурацией: пинги, ad-hoc команды, плейбуки, роли, vault, lint.
+
+```bash
 ansible ! -name "inventory*.yml" -name "*.yml" -type f -print0 | xargs -0 -n1 ansible-playbook --syntax-check
 ansible -a ping localhost
 ansible all -i inventory.json -m ping
@@ -19,16 +36,13 @@ ansible -m localhost
 ansible -m ping
 ansible servers -i inventory -m  "free -m"
 ansible servers -i inventory -m raw "free -m" --private-key=<path-to-key> -u root
-
 ansible-galaxy -h
 ansible-galaxy init
 ansible-galaxy init app
 ansible-galaxy install -r environments/stage/requirements.yml
-
 ansible-lint
 ansible-lint roles/db/tasks/config_mongo.yml
 ansible-lint roles/db/tasks/main.yml
-
 ansible-playbook
 ansible-playbook  -i inventory.yml --syntax-check  site.yml
 ansible-playbook  site.yml
@@ -43,16 +57,17 @@ ansible-playbook -i inventory -m ping
 ansible-playbook -i inventory --private-key=<path-to-key> -u gitlab deploy.yml -v
 ansible-playbook reddit_app.yml --check --limit app --tags deploy-tag
 ansible-playbook reddit_app.yml -D --limit app --tags deploy-tag
-
 ansible-vault edit environments/prod/credentials.yml
 ansible-vault edit environments/prod/credentials.yml --vault-password-file=~/.ansible/vault.key
+```
 
-cfssl gencert \  -ca=ca.pem \  -ca-key=ca-key.pem \  -config=ca-config.json \  -profile=kubernetes \  admin-csr.json | cfssljson -bare admin
-cfssl gencert -initca ca-csr.json | cfssljson -bare ca
-cfssl info
-cfssl --version
-cfssljson --version
+---
 
+## DOCKER — 64 команд
+
+Контейнеры: сборка, запуск, сети, тома, compose, docker-machine (GCP).
+
+```bash
 docker exec -it bb387d0746f9 bash
 docker build -t $USER_NAME/fluentd .
 docker build -t ozyab/comment:1.0 ./comment
@@ -70,7 +85,6 @@ docker info
 docker inspect ozyab/otus-reddit:1.0
 docker inspect ozyab/otus-reddit:1.0  -f '{{.ContainerConfig.Cmd}}'
 docker kill $(docker ps -q)
-
 docker logs 492
 docker logs -f dockermicroservices_elasticsearch_1
 docker logout
@@ -99,7 +113,6 @@ docker tag ozyab/prometheus:1.0 ozyab/prometheus:latest
 docker version
 docker volume create reddit_db
 docker volume ls
-
 docker-compose
 docker-compose up -d -f docker-compose-monitoring.yml
 docker-compose up -d
@@ -114,40 +127,164 @@ docker-compose logs -f post
 docker-compose start post
 docker-compose stop post
 docker-machine create --driver google \
-  --google-machine-image https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/family/ubuntu-1604-lts \
-  --google-machine-type n1-standard-1 \
-  --google-zone europe-west1-b \
-  docker-host
 docker-machine env docker-host
 docker-machine regenerate-certs docker-host
 docker-machine rm docker-host
 docker-machine ssh docker-host
 docker-machine ssh docker-host ifconfig
+```
 
+---
 
-find ansible ! -name "inventory*.yml" -name "*.yml" -type f -print0 | xargs -0 -n1 ansible-playbook --syntax-check
-for i in {coment post reddit ui} do; mkdir ${i} done
-for i in {coment post reddit ui} do; mkdir $i done
-for i in 0 1 2; do  gcloud compute instances create controller-${i} \
-    --async \
-    --boot-disk-size 200GB \
-    --can-ip-forward \
-    --image-family ubuntu-1804-lts \
-    --image-project ubuntu-os-cloud \
-    --machine-type n1-standard-1 \
-    --private-network-ip 10.240.0.1${i} \
-    --scopes compute-rw,storage-ro,service-management,service-control,logging-write,monitoring \
-    --subnet kubernetes \
-    --tags kubernetes-the-hard-way,controller
-	done
-for instance in controller-0 controller-1 controller-2; do  gcloud compute scp admin.kubeconfig kube-controller-manager.kubeconfig kube-scheduler.kubeconfig ${instance}:~/ done
+## K8S — 86 команд
 
+Kubernetes: apply/delete, describe/get, exec/logs, port-forward, secrets, ingress, minikube.
 
+```bash
+kubectl apply comment-deployment.yml
+kubectl apply -f .
+kubectl apply -f ./kubernetes/reddit/ -n dev
+kubectl apply -f ./kubernetes/reddit/dev-namespace.yml
+kubectl apply -f https://storage.googleapis.com/kubernetes-the-hard-way/coredns.yaml
+kubectl apply -f kubernetes/reddit/tiller.yml
+kubectl config current-context
+kubectl config view
+kubectl context
+kubectl context view
+kubectl create secret generic kubernetes-the-hard-way \
+kubectl create secret tls ui-ingress --key tls.key --cert tls.crt -n dev
+kubectl delete deploy mongo -n dev
+kubectl delete deploy ui -n dev
+kubectl delete -f .
+kubectl delete -f ui-ingress.yml -n dev
+kubectl delete ingress ui -n dev
+kubectl delete secret tls -n dev
+kubectl delete secret tls ui-ingress --key tls.key --cert tls.crt -n dev
+kubectl delete ui-deployment.yml
+kubectl describe nodes
+kubectl describe pod reddit-test-mongodb-6b6bc97c58-zmq8j
+kubectl describe pod ui-1-ui-658b6fcc8d-km6n7
+kubectl describe secret ui-ingress -n dev
+kubectl describe service comment | grep Endpoints
+kubectl describe storageclass standard -n dev
+kubectl exec -it grafana-bdc977fd4-lxscw sh
+kubectl exec -ti $POD_NAME -- nginx -v
+kubectl exec -ti $POD_NAME -- nslookup kubernetes
+kubectl exec -ti -n dev post-8ff9c4cb9-h4zpq ping comment
+kubectl expose deployment nginx --port 80 --type NodePort
+kubectl get deployment
+kubectl get deployment -n default
+kubectl get ingress -n default
+kubectl get ingress -n dev
+kubectl get nodes -o wide
+kubectl get nodes
+kubectl get persistentvolume -n dev
+kubectl get po
+kubectl get pod -n dev
+kubectl get pods
+kubectl get pods -l k8s-app=kube-dns -n kube-system
+kubectl get pods -l run=busybox -o jsonpath
+kubectl get pods -l run=busybox -o jsonpath="{.items[0].metadata.age}"
+kubectl get pods -l run=busybox -o jsonpath="{.items[0].metadata.name}"
+kubectl get pods -l run=busybox -o jsonpath="{.items[0].metadata.status}"
+kubectl get pods -n dev
+kubectl get pods -n kube-system --selector app=helm
+kubectl get pods -o wide
+kubectl get pods --selector component=mongo
+kubectl get pods --selector component=uo
+kubectl get service
+kubectl get service -n dev --selector component=ui
+kubectl get service -n nginx-ingress nginx
+kubectl get services
+kubectl get services -n dev
+kubectl get svc
+kubectl inspect gitlab-gitlab-runner-5df57b8848-7x8l7
+kubectl inspect
+kubectl inspect pod gitlab-gitlab-runner-5df57b8848-7x8l7
+kubectl log -f grafana-bdc977fd4-gpr5d
+kubectl logs $POD_NAME
+kubectl logs -f comment-559cc97f59-hnwsq
+kubectl logs -f comment-559cc97f59-hnwsq -n dev
+kubectl logs -f post-57788c57f6-427cj
+kubectl logs grafana-bdc977fd4-gpr5d
+kubectl logs reddit-test-ui-78664855d5-pvdpr
+kubectl pod inspect gitlab-gitlab-runner-5df57b8848-7x8l7
+kubectl port-forward $POD_NAME 8080:80
+kubectl port-forward comment-757c84f994-5w47f 8080:9292
+kubectl port-forward post-5c45f6d5c8-5dpx7 5000:5000
+kubectl port-forward ui-5d69f5784f-85scd 9292:9292
+kubectl run busybox --image=busybox:1.28 --command -- sleep 3600
+kubectl run nginx --image=nginx
+kubectl scale deployment --replicas 0 -n kube-system kube-dns-autoscaler
+kubectl scale deployment --replicas 1 -n kube-system kube-dns-autoscaler
+kubectl service
+kubectl service delete
+kubectl exec -it grafana-bdc977fd4-lxscw bash
+minikube
+minikube addons enable
+minikube addons enable dashboard
+minikube addons list
+kubectl get all -n kube-system --selector k8s-app=kubernetes-dashboard
+minikube start
+minikube stop
+```
+
+---
+
+## HELM — 23 команд
+
+Пакетный менеджер K8s: install/upgrade, чарты, репозитории, tiller (helm 2).
+
+```bash
+helm
+helm del --purge grafana
+helm delete grafana
+helm dep update
+helm dep update ./reddit
+helm dep update --debug
+helm describe test-ui-1
+helm fetch  stable/prometheus
+helm fetch gitlab/gitlab-omnibus --version 0.1.37 --untar
+helm fetch --untar stable/prometheus
+helm init --service-account tiller
+helm inspect gitlab-gitlab-runner-5df57b8848-7x8l7
+helm inspect ui
+helm install grafana stable/grafana --set "adminPassword=<your-password>" \
+helm install --name gitlab . -f values.yaml
+helm install reddit --name reddit-test
+helm install ui --name ui-3
+helm repo add gitlab https://charts.gitlab.io
+helm search mongo
+helm upgrade <release-name> ./reddit
+helm upgrade --install grafana stable/grafana --set "server.adminPassword=<your-password>" \
+helm upgrade staging --namespace staging ./reddit —install
+helm upgrade ui-1 ui/
+```
+
+---
+
+## K8S-THE-HARD-WAY — 7 команд
+
+Kubernetes the Hard Way: генерация сертификатов (cfssl/openssl).
+
+```bash
+cfssl gencert \  -ca=ca.pem \  -ca-key=ca-key.pem \  -config=ca-config.json \  -profile=kubernetes \  admin-csr.json | cfssljson -bare admin
+cfssl gencert -initca ca-csr.json | cfssljson -bare ca
+cfssl info
+cfssl --version
+cfssljson --version
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=35.201.126.86"
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=35.201.67.17"
+```
+
+---
+
+## GCLOUD — 21 команд
+
+Google Cloud: auth, compute instances, firewall, ssh, config.
+
+```bash
 gcloud  compute --project=infra instances create RedditPuma \
-   --zone=us-east1-b --machine-type=f1-micro --subnet=default --tags=puma-server \
-   --image=reddit-base --image-project=infra \
-   --boot-disk-size=10GB --boot-disk-type=pd-standard
-
 gcloud auth application-default login
 gcloud auth list
 gcloud auth login
@@ -159,7 +296,6 @@ gcloud compute --project=infra firewall-rules create default-puma-server --direc
 gcloud compute --project=infra instances create puma-service --zone=us-east1-b --machine-type=f1-micro --subnet=default --tags=puma-server --image=reddit-base --image-project=infra-219416 --boot-disk-size=10GB --boot-disk-type=pd-standard
 gcloud compute ssh controller-0
 gcloud compute ssh controller-0 \
-  --command "kubectl get nodes --kubeconfig admin.kubeconfig"
 gcloud compute ssh worker-2
 gcloud config
 gcloud config get-value
@@ -169,13 +305,98 @@ gcloud config set project list
 gcloud info
 gcloud init
 gcloud projects list
+```
 
+---
 
-gem
-gem install travis
-gem list
-gem update --system
+## TERRAFORM — 23 команд
 
+IaC: init/plan/apply/destroy, import, output, taint, fmt.
+
+```bash
+terraform plan
+terraform show
+terraform apply
+terraform apply -auto-approve=false
+terraform destroy
+terraform destroy -auto-approve && terraform apply
+terraform destroy --help
+terraform fmt
+terraform get
+terraform import google_compute_firewall
+terraform import google_compute_firewall.firewall_mongo
+terraform import google_compute_firewall.firewall_ssh default-allow-ssh
+terraform init
+terraform init -backend=false
+terraform validate -var-file=terraform.tfvars.example
+terraform output
+terraform output app_external_ip
+terraform play
+terraform refresh
+terraform show | grep assigned_nat_ip
+terraform taint google_compute_instance.app
+terraform update
+terraform -v
+```
+
+---
+
+## PACKER — 12 команд
+
+Сборка образов: build/validate с variables.json.
+
+```bash
+packer build  -var-file=variables.json immutable.json
+packer build ./ubuntu16.json
+packer build app.json
+packer build packer/app.json
+packer build ubuntu16.json
+packer build --var-files=variables.json ubuntu16.json
+packer validate  -var-file=variables.json immutable.json
+packer validate  -var-file=variables.json.example immutable.json
+packer validate app.json
+packer validate packer/app.json
+packer validate ubuntu16.json -var-file=variables.json
+packer version
+```
+
+---
+
+## MOLECULE — 8 команд
+
+Тестирование Ansible-ролей: create/converge/verify/destroy.
+
+```bash
+molecule
+molecule converge
+molecule create
+molecule destroy
+molecule init
+molecule init scenario --scenario-name default -r db -d vagrant
+molecule list
+molecule verify
+```
+
+---
+
+## TRAVIS — 4 команд
+
+CI: login, encrypt (Slack-уведомления), token.
+
+```bash
+travis encrypt "org-slack:TOKEN#your-handle" --add notifications.slack.rooms --com  # замените TOKEN
+travis encrypt "org-slack:TOKEN#your-handle" --add notifications.slack.rooms --pro -r Otus-DevOps-2018-09/ozyab_microservices  # замените TOKEN
+travis login --com
+travis token
+```
+
+---
+
+## GIT — 69 команд
+
+Повседневный git: commit/rebase/push/ветки/теги, remote gitlab.
+
+```bash
 git add .
 git add . && git commit && git push -f --set-upstream origin docker-2
 git add . && git commit --amend && git push -f --set-upstream origin docker-4
@@ -245,215 +466,113 @@ git tag 2.4.10
 git tag -a Homework-2
 git tag -a Travis
 git update-index --chmod=+x packer/config-scripts/create-reddit-vm.sh
+```
 
+---
+
+## GO — 7 команд
+
+Go: build, run, godoc.
+
+```bash
 go
 go build
 go --help
 go help run
 go version
-godoc 
+godoc
 godoc fmt Println
+```
 
+---
 
-hadolint
-hadolint Dockerfile
+## RUBY — 7 команд
 
-helm
-helm del --purge grafana
-helm delete grafana
-helm dep update
-helm dep update ./reddit
-helm dep update --debug
-helm describe test-ui-1
-helm fetch  stable/prometheus
-helm fetch gitlab/gitlab-omnibus --version 0.1.37 --untar
-helm fetch --untar stable/prometheus
-helm init --service-account tiller
-helm inspect gitlab-gitlab-runner-5df57b8848-7x8l7
-helm inspect ui
-helm install grafana stable/grafana --set "adminPassword=<your-password>" \
-  --set "service.type=NodePort" \
-  --set "ingress.enabled=true" \
-  --set "ingress.hosts={reddit-grafana}"
-helm install --name gitlab . -f values.yaml
-helm install reddit --name reddit-test
-helm install ui --name ui-3
-helm repo add gitlab https://charts.gitlab.io
-helm search mongo
-helm upgrade <release-name> ./reddit
-helm upgrade --install grafana stable/grafana --set "server.adminPassword=<your-password>" \
-  --set "server.service.type=NodePort" \
-  --set "server.ingress.enabled=true" \
-  --set "server.ingress.hosts={reddit-grafana}"
+Ruby ecosystem: gem, ruby, rubygems (для Travis и reddit).
 
-helm upgrade staging --namespace staging ./reddit —install
-helm upgrade ui-1 ui/
+```bash
+gem
+gem install travis
+gem list
+gem update --system
+ruby
+ruby --version
+rubygems --version
+```
 
+---
 
-kubectl apply comment-deployment.yml
-kubectl apply -f .
-kubectl apply -f ./kubernetes/reddit/ -n dev
-kubectl apply -f ./kubernetes/reddit/dev-namespace.yml
-kubectl apply -f https://storage.googleapis.com/kubernetes-the-hard-way/coredns.yaml
-kubectl apply -f kubernetes/reddit/tiller.yml
-kubectl config current-context
-kubectl config view
-kubectl context 
-kubectl context view
-kubectl create secret generic kubernetes-the-hard-way \
-  --from-literal="mykey=mydata"
-kubectl create secret tls ui-ingress --key tls.key --cert tls.crt -n dev
-kubectl delete deploy mongo -n dev
-kubectl delete deploy ui -n dev
-kubectl delete -f .
-kubectl delete -f ui-ingress.yml -n dev
-kubectl delete ingress ui -n dev
-kubectl delete secret tls -n dev
-kubectl delete secret tls ui-ingress --key tls.key --cert tls.crt -n dev
-kubectl delete ui-deployment.yml
-kubectl describe nodes
-kubectl describe pod reddit-test-mongodb-6b6bc97c58-zmq8j
-kubectl describe pod ui-1-ui-658b6fcc8d-km6n7
-kubectl describe secret ui-ingress -n dev
-kubectl describe service comment | grep Endpoints
-kubectl describe storageclass standard -n dev
-kubectl exec -it grafana-bdc977fd4-lxscw sh
-kubectl exec -ti $POD_NAME -- nginx -v
-kubectl exec -ti $POD_NAME -- nslookup kubernetes
-kubectl exec -ti -n dev post-8ff9c4cb9-h4zpq ping comment
-kubectl expose deployment nginx --port 80 --type NodePort
-kubectl get deployment
-kubectl get deployment -n default
-kubectl get ingress -n default
-kubectl get ingress -n dev
-kubectl get nodes -o wide
-kubectl get nodes
-kubectl get persistentvolume -n dev
-kubectl get po
-kubectl get pod -n dev
-kubectl get pods
-kubectl get pods -l k8s-app=kube-dns -n kube-system
-kubectl get pods -l run=busybox -o jsonpath
-kubectl get pods -l run=busybox -o jsonpath="{.items[0].metadata.age}"
-kubectl get pods -l run=busybox -o jsonpath="{.items[0].metadata.name}"
-kubectl get pods -l run=busybox -o jsonpath="{.items[0].metadata.status}"
-kubectl get pods -n dev
-kubectl get pods -n kube-system --selector app=helm
-kubectl get pods -o wide
-kubectl get pods --selector component=mongo
-kubectl get pods --selector component=uo
-kubectl get service
-kubectl get service -n dev --selector component=ui
-kubectl get service -n nginx-ingress nginx
-kubectl get services
-kubectl get services -n dev
-kubectl get svc
-kubectl inspect gitlab-gitlab-runner-5df57b8848-7x8l7
-kubectl inspect
-kubectl inspect pod gitlab-gitlab-runner-5df57b8848-7x8l7
-kubectl log -f grafana-bdc977fd4-gpr5d
-kubectl logs $POD_NAME
-kubectl logs -f comment-559cc97f59-hnwsq
-kubectl logs -f comment-559cc97f59-hnwsq -n dev
-kubectl logs -f post-57788c57f6-427cj
-kubectl logs grafana-bdc977fd4-gpr5d
-kubectl logs reddit-test-ui-78664855d5-pvdpr
-kubectl pod inspect gitlab-gitlab-runner-5df57b8848-7x8l7
-kubectl port-forward $POD_NAME 8080:80
-kubectl port-forward comment-757c84f994-5w47f 8080:9292
-kubectl port-forward post-5c45f6d5c8-5dpx7 5000:5000
-kubectl port-forward ui-5d69f5784f-85scd 9292:9292
-kubectl run busybox --image=busybox:1.28 --command -- sleep 3600
-kubectl run nginx --image=nginx
-kubectl scale deployment --replicas 0 -n kube-system kube-dns-autoscaler
-kubectl scale deployment --replicas 1 -n kube-system kube-dns-autoscaler
-kubectl service
-kubectl service delete
-kubectl exec -it grafana-bdc977fd4-lxscw bash
+## PYTHON — 9 команд
 
-minikube
-minikube addons enable
-minikube addons enable dashboard
-minikube addons list
-kubectl get all -n kube-system --selector k8s-app=kubernetes-dashboard
-minikube start
-minikube stop
+Python: pip, virtualenv (для molecule и инструментов).
 
-molecule
-molecule converge
-molecule create
-molecule destroy
-molecule init
-molecule init scenario --scenario-name default -r db -d vagrant
-molecule list
-molecule verify
-
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=35.201.126.86"
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=35.201.67.17"
-
-packer build  -var-file=variables.json immutable.json
-packer build ./ubuntu16.json
-packer build app.json
-packer build packer/app.json
-packer build ubuntu16.json
-packer build --var-files=variables.json ubuntu16.json
-packer validate  -var-file=variables.json immutable.json
-packer validate  -var-file=variables.json.example immutable.json
-packer validate app.json
-packer validate packer/app.json
-packer validate ubuntu16.json -var-file=variables.json
-packer version
-pbcopy < ~/.ssh/id_rsa.pub
-
+```bash
 pip
 pip install apache-libcloud
 pip install molecule
 pip install --upgrade pip
 pip -v
 pip --version
+virtualenv
+virtualenv pyenv
+virtualenv --version
+```
 
+---
 
-ruby
-ruby --version
-rubygems --version
+## HADOLINT — 2 команд
 
+Линтер Dockerfile.
+
+```bash
+hadolint
+hadolint Dockerfile
+```
+
+---
+
+## ПРОЧЕЕ — 37 команд
+
+Разное: tar, find, scp (обрывки команд).
+
+```bash
+--google-machine-image https://www.googleapis.com/compute/v1/projects/ubuntu-os-cloud/global/images/family/ubuntu-1604-lts \
+--google-machine-type n1-standard-1 \
+--google-zone europe-west1-b \
+docker-host
+find ansible ! -name "inventory*.yml" -name "*.yml" -type f -print0 | xargs -0 -n1 ansible-playbook --syntax-check
+for i in {coment post reddit ui} do; mkdir ${i} done
+for i in {coment post reddit ui} do; mkdir $i done
+for i in 0 1 2; do  gcloud compute instances create controller-${i} \
+--async \
+--boot-disk-size 200GB \
+--can-ip-forward \
+--image-family ubuntu-1804-lts \
+--image-project ubuntu-os-cloud \
+--machine-type n1-standard-1 \
+--private-network-ip 10.240.0.1${i} \
+--scopes compute-rw,storage-ro,service-management,service-control,logging-write,monitoring \
+--subnet kubernetes \
+--tags kubernetes-the-hard-way,controller
+done
+for instance in controller-0 controller-1 controller-2; do  gcloud compute scp admin.kubeconfig kube-controller-manager.kubeconfig kube-scheduler.kubeconfig ${instance}:~/ done
+--zone=us-east1-b --machine-type=f1-micro --subnet=default --tags=puma-server \
+--image=reddit-base --image-project=infra \
+--boot-disk-size=10GB --boot-disk-type=pd-standard
+--command "kubectl get nodes --kubeconfig admin.kubeconfig"
+--set "service.type=NodePort" \
+--set "ingress.enabled=true" \
+--set "ingress.hosts={reddit-grafana}"
+--set "server.service.type=NodePort" \
+--set "server.ingress.enabled=true" \
+--set "server.ingress.hosts={reddit-grafana}"
+--from-literal="mykey=mydata"
+pbcopy < ~/.ssh/id_rsa.pub
 scp  mtproto/mtproto-proxy o
-
 systemd unit
 tar -xcf google-cloud-sdk-221.0.0-darwin-x86_64.tar.gz
 tar -xf google-cloud-sdk-221.0.0-darwin-x86_64.tar.gz
 tar -xvf terraform_0.11.10_darwin_amd64.zip
+```
 
-terraform plan
-terraform show
-terraform apply
-terraform apply -auto-approve=false
-terraform destroy
-terraform destroy -auto-approve && terraform apply
-terraform destroy --help
-terraform fmt
-terraform get
-terraform import google_compute_firewall
-terraform import google_compute_firewall.firewall_mongo
-terraform import google_compute_firewall.firewall_ssh default-allow-ssh
-terraform init
-terraform init -backend=false
-terraform validate -var-file=terraform.tfvars.example
-terraform output
-terraform output app_external_ip
-terraform play
-terraform refresh
-terraform show | grep assigned_nat_ip
-terraform taint google_compute_instance.app
-terraform update
-terraform -v
-
-travis encrypt "org-slack:TOKEN#your-handle" --add notifications.slack.rooms --com  # замените TOKEN
-travis encrypt "org-slack:TOKEN#your-handle" --add notifications.slack.rooms --pro -r Otus-DevOps-2018-09/ozyab_microservices  # замените TOKEN
-
-travis login --com
-travis token
-
-virtualenv
-virtualenv pyenv
-virtualenv --version
+---
